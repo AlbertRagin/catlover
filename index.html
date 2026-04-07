@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кошачий Pinterest</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background: #2196F3;
+            color: white;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+        }
+
+        .tabs {
+            display: flex;
+            height: 100%;
+        }
+
+        .tab {
+            padding: 0 24px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            height: 100%;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .tab.active {
+            color: white;
+            background: rgba(255,255,255,0.15);
+            font-weight: 600;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: white;
+        }
+
+        .tab-count {
+            margin-left: 8px;
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #FFC107;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            margin-right: 16px;
+            cursor: pointer;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stats-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stats-text strong {
+            color: #2196F3;
+        }
+
+        /* Masonry Grid */
+        .cats-grid {
+            column-count: 5;
+            column-gap: 16px;
+        }
+
+        .cat-card {
+            break-inside: avoid;
+            margin-bottom: 16px;
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        /* Состояние 1: Наведение на карточку */
+        .cat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .cat-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .favorite-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #e0e0e0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            opacity: 0.7;
+        }
+
+        /* Показываем сердечко при наведении на карточку */
+        .cat-card:hover .favorite-btn {
+            opacity: 1;
+        }
+
+        /* Состояние 2: Наведение на сердечко */
+        .favorite-btn:hover {
+            transform: scale(1.1);
+            background: #fff5f5;
+            border-color: #ff6b4a;
+            opacity: 1 !important;
+        }
+
+        /* Иконка сердечка */
+        .favorite-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: none;
+            stroke: #ff6b4a;
+            stroke-width: 2;
+            transition: all 0.2s ease;
+        }
+
+        /* При наведении на сердечко - заполняем */
+        .favorite-btn:hover svg {
+            fill: #ff6b4a;
+            stroke: #ff6b4a;
+        }
+
+        /* Состояние 3: Активное (кликнутое) сердечко */
+        .favorite-btn.active {
+            background: white;
+            border-color: #ff6b4a;
+            opacity: 1;
+        }
+
+        .favorite-btn.active svg {
+            fill: #ff6b4a;
+            stroke: #ff6b4a;
+        }
+
+        .favorite-btn.active:hover {
+            background: #fff5f5;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196F3;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Load More Button */
+        .load-more-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 14px 40px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .load-more-btn:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
+        }
+
+        .load-more-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .load-more-btn.hidden {
+            display: none;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #999;
+            column-span: all;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Error */
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 16px;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .cats-grid {
+                column-count: 4;
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .cats-grid {
+                column-count: 3;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cats-grid {
+                column-count: 2;
+            }
+            
+            .tab {
+                padding: 0 16px;
+                font-size: 13px;
+            }
+            
+            .container {
+                padding: 16px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cats-grid {
+                column-count: 1;
+            }
+            
+            .tab {
+                padding: 0 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="tabs">
+            <button class="tab active" data-tab="all">Все котики</button>
+            <button class="tab" data-tab="favorites">
+                Любимые котики
+                <span class="tab-count" id="fav-count">0</span>
+            </button>
+        </div>
+        <div class="user-avatar">R</div>
+    </header>
+
+    <main class="container">
+        <div class="stats-bar">
+            <span class="stats-text">Загружено котиков: <strong id="cats-loaded">0</strong></span>
+            <span class="stats-text">В избранном: <strong id="cats-favorites">0</strong></span>
+        </div>
+        
+        <div id="cats-container" class="cats-grid"></div>
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p id="loading-text">Загружаем котиков...</p>
+        </div>
+        <button id="load-more" class="load-more-btn hidden">Загрузить ещё котиков 🐱</button>
+        <div id="error" class="error" style="display: none;"></div>
+    </main>
+
+    <script>
+        // Constants
+        const API_URL = 'https://api.thecatapi.com/v1/images/search';
+        const API_IMAGE_URL = 'https://api.thecatapi.com/v1/images';
+        const STORAGE_KEY = 'cat_pinterest_favorites';
+        const CATS_PER_PAGE = 30;
+        
+        // SVG Heart Icon
+        const heartIcon = `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        `;
+        
+        // State
+        let currentPage = 0;
+        let currentTab = 'all';
+        let isLoading = false;
+        let hasMore = true;
+        let favorites = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        let allCats = [];
+
+        // DOM Elements
+        const container = document.getElementById('cats-container');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loading-text');
+        const loadMoreBtn = document.getElementById('load-more');
+        const error = document.getElementById('error');
+        const tabs = document.querySelectorAll('.tab');
+        const favCount = document.getElementById('fav-count');
+        const catsLoaded = document.getElementById('cats-loaded');
+        const catsFavorites = document.getElementById('cats-favorites');
+
+        // Initialize
+        function init() {
+            updateStats();
+            loadCats();
+            setupEventListeners();
+            setupInfiniteScroll();
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+            
+            loadMoreBtn.addEventListener('click', loadMoreCats);
+        }
+
+        // Setup Infinite Scroll
+        function setupInfiniteScroll() {
+            let scrollTimeout;
+            
+            window.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                
+                scrollTimeout = setTimeout(() => {
+                    if (isLoading || !hasMore || currentTab !== 'all') return;
+                    
+                    const scrollTop = window.pageYOffset;
+                    const windowHeight = window.innerHeight;
+                    const documentHeight = document.documentElement.scrollHeight;
+                    
+                    if (scrollTop + windowHeight >= documentHeight - 800) {
+                        loadMoreCats();
+                    }
+                }, 200);
+            });
+        }
+
+        // Switch Tab
+        function switchTab(tab) {
+            currentTab = tab;
+            currentPage = 0;
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            
+            container.innerHTML = '';
+            loadMoreBtn.classList.add('hidden');
+            error.style.display = 'none';
+            
+            if (tab === 'favorites') {
+                renderFavorites();
+            } else {
+                allCats = [];
+                loadCats();
+            }
+        }
+
+        // Load Cats (All Tab)
+        async function loadCats() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            loading.style.display = 'block';
+            loadingText.textContent = 'Загружаем котиков...';
+            error.style.display = 'none';
+            loadMoreBtn.classList.add('hidden');
+            
+            try {
+                const response = await fetch(`${API_URL}?limit=${CATS_PER_PAGE}&page=${currentPage}`);
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки данных');
+                }
+                
+                const cats = await response.json();
+                
+                if (cats.length === 0) {
+                    hasMore = false;
+                } else {
+                    allCats = [...allCats, ...cats];
+                    renderCats(cats);
+                    currentPage++;
+                    hasMore = true;
+                    loadMoreBtn.classList.remove('hidden');
+                }
+                
+            } catch (err) {
+                error.textContent = 'Произошла ошибка при загрузке котиков. Попробуйте позже.';
+                error.style.display = 'block';
+            } finally {
+                isLoading = false;
+                loading.style.display = 'none';
+                updateStats();
+            }
+        }
+
+        // Load More Cats
+        async function loadMoreCats() {
+            if (isLoading || !hasMore) return;
+            
+            isLoading = true;
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.textContent = 'Загружаем...';
+            
+            try {
+                const response = await fetch(`${API_URL}?limit=${CATS_PER_PAGE}&page=${currentPage}`);
+                const cats = await response.json();
+                
+                if (cats.length > 0) {
+                    allCats = [...allCats, ...cats];
+                    renderCats(cats);
+                    currentPage++;
+                    hasMore = true;
+                    loadMoreBtn.textContent = 'Загрузить ещё котиков 🐱';
+                } else {
+                    hasMore = false;
+                    loadMoreBtn.textContent = 'Больше котиков нет 😢';
+                }
+                
+            } catch (err) {
+                console.error('Error loading more cats:', err);
+                loadMoreBtn.textContent = 'Ошибка загрузки. Попробовать снова';
+                loadMoreBtn.disabled = false;
+            } finally {
+                isLoading = false;
+                if (hasMore) {
+                    loadMoreBtn.disabled = false;
+                }
+                updateStats();
+            }
+        }
+
+        // Render Cats
+        function renderCats(cats) {
+            cats.forEach(cat => {
+                const card = createCatCard(cat);
+                container.appendChild(card);
+            });
+        }
+
+        // Create Cat Card
+        function createCatCard(cat) {
+            const card = document.createElement('div');
+            card.className = 'cat-card';
+            card.dataset.id = cat.id;
+            
+            const isFavorite = favorites.includes(cat.id);
+            
+            card.innerHTML = `
+                <img src="${cat.url}" alt="Cat ${cat.id}" loading="lazy">
+                <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
+                        data-id="${cat.id}"
+                        title="${isFavorite ? 'Убрать из любимых' : 'Добавить в любимые'}"
+                        type="button">
+                    ${heartIcon}
+                </button>
+            `;
+            
+            const favBtn = card.querySelector('.favorite-btn');
+            favBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFavorite(cat.id, favBtn);
+            });
+            
+            return card;
+        }
+
+        // Toggle Favorite
+        function toggleFavorite(catId, btn) {
+            const index = favorites.indexOf(catId);
+            
+            if (index > -1) {
+                favorites.splice(index, 1);
+                btn.classList.remove('active');
+                btn.title = 'Добавить в любимые';
+            } else {
+                favorites.push(catId);
+                btn.classList.add('active');
+                btn.title = 'Убрать из любимых';
+            }
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+            updateStats();
+            
+            // If in favorites tab, remove the card
+            if (currentTab === 'favorites' && index > -1) {
+                const card = btn.closest('.cat-card');
+                card.style.transform = 'scale(0.8)';
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 300);
+                
+                if (container.children.length === 0) {
+                    renderEmptyState();
+                }
+            }
+        }
+
+        // Render Favorites
+        function renderFavorites() {
+            if (favorites.length === 0) {
+                renderEmptyState();
+                return;
+            }
+            
+            loadFavoriteCats();
+        }
+
+        // Load Favorite Cats from API
+        async function loadFavoriteCats() {
+            isLoading = true;
+            loading.style.display = 'block';
+            loadingText.textContent = `Загружаем любимых котиков...`;
+            error.style.display = 'none';
+            
+            try {
+                const promises = favorites.map(id => 
+                    fetch(`${API_IMAGE_URL}/${id}`)
+                        .then(res => {
+                            if (!res.ok) throw new Error(`Cat ${id} not found`);
+                            return res.json();
+                        })
+                        .catch(err => {
+                            console.warn(`Failed to load cat ${id}:`, err);
+                            return null;
+                        })
+                );
+                
+                const results = await Promise.all(promises);
+                const favoriteCats = results.filter(cat => cat !== null);
+                
+                if (favoriteCats.length === 0) {
+                    renderEmptyState();
+                } else {
+                    container.innerHTML = '';
+                    renderCats(favoriteCats);
+                    allCats = favoriteCats;
+                }
+                
+            } catch (err) {
+                console.error('Error loading favorites:', err);
+                error.textContent = 'Ошибка загрузки любимых котиков';
+                error.style.display = 'block';
+            } finally {
+                isLoading = false;
+                loading.style.display = 'none';
+                updateStats();
+            }
+        }
+
+        // Render Empty State
+        function renderEmptyState() {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">💔</div>
+                    <h2>Пока нет любимых котиков</h2>
+                    <p>Добавьте котиков в избранное, нажав на сердечко</p>
+                </div>
+            `;
+        }
+
+        // Update Stats
+        function updateStats() {
+            favCount.textContent = favorites.length;
+            catsLoaded.textContent = allCats.length;
+            catsFavorites.textContent = favorites.length;
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
